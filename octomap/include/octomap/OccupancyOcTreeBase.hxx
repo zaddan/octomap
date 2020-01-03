@@ -72,6 +72,12 @@ namespace octomap {
 
   }
 
+template <class NODE>
+  NODE* OccupancyOcTreeBase<NODE>::setChild(NODE* node, NODE* new_child_node, int childIdx) {
+    node->setChild(childIdx, new_child_node);
+    //children[childIdx] = new_child_node;
+  }
+
   template <class NODE>
   void OccupancyOcTreeBase<NODE>::insertPointCloud(const ScanNode& scan, double maxrange, bool lazy_eval, bool discretize) {
     // performs transformation to data and sensor origin first
@@ -113,7 +119,7 @@ namespace octomap {
 
 
   template <class NODE>
-  void OccupancyOcTreeBase<NODE>::insertPointCloudRays(const Pointcloud& pc, const point3d& origin, double /* maxrange */, bool lazy_eval) {
+  void OccupancyOcTreeBase<NODE>::insertPointCloudRays(const Pointcloud& pc, const point3d& origin, double maxrange, bool lazy_eval) {
     if (pc.size() < 1)
       return;
 
@@ -298,6 +304,12 @@ namespace octomap {
 
 
   template <class NODE>
+      NODE* OccupancyOcTreeBase<NODE>::search_with_pos_return_(const OcTreeKey& key, unsigned int& pos_found_at, unsigned int depth) {
+        this->search_with_pos_return(key, pos_found_at, depth);
+  }
+   
+  
+  template <class NODE>
   NODE* OccupancyOcTreeBase<NODE>::updateNode(const OcTreeKey& key, float log_odds_update, bool lazy_eval) {
     // early abort (no change will happen).
     // may cause an overhead in some configuration, but more often helps
@@ -307,7 +319,7 @@ namespace octomap {
         && ((log_odds_update >= 0 && leaf->getLogOdds() >= this->clamping_thres_max)
         || ( log_odds_update <= 0 && leaf->getLogOdds() <= this->clamping_thres_min)))
     {
-      return leaf;
+        return leaf;
     }
 
     bool createdRoot = false;
@@ -318,6 +330,13 @@ namespace octomap {
     }
 
     return updateNodeRecurs(this->root, createdRoot, key, 0, log_odds_update, lazy_eval);
+  }
+
+   template <class NODE>
+  void OccupancyOcTreeBase<NODE>::expandRecursForShrinking_(NODE* node, unsigned int depth,
+                                      unsigned int max_depth) {
+      //this->expandRecursForShrinking(node, depth, max_depth);  
+      this->expandRecurs(node, depth, max_depth);  
   }
 
   template <class NODE>
@@ -334,31 +353,31 @@ namespace octomap {
     OcTreeKey key;
     if (!this->coordToKeyChecked(x, y, z, key))
       return NULL;
-
     return updateNode(key, log_odds_update, lazy_eval);
   }
 
+
   template <class NODE>
   NODE* OccupancyOcTreeBase<NODE>::updateNode(const OcTreeKey& key, bool occupied, bool lazy_eval) {
-    float logOdds = this->prob_miss_log;
+    float logOdds = this->prob_miss_log; // @suppress("Field cannot be resolved")
     if (occupied)
       logOdds = this->prob_hit_log;
-
     return updateNode(key, logOdds, lazy_eval);
-  }
-
-  template <class NODE>
-  NODE* OccupancyOcTreeBase<NODE>::updateNode(const point3d& value, bool occupied, bool lazy_eval) {
-    OcTreeKey key;
-    if (!this->coordToKeyChecked(value, key))
-      return NULL;
-    return updateNode(key, occupied, lazy_eval);
   }
 
   template <class NODE>
   NODE* OccupancyOcTreeBase<NODE>::updateNode(double x, double y, double z, bool occupied, bool lazy_eval) {
     OcTreeKey key;
     if (!this->coordToKeyChecked(x, y, z, key))
+      return NULL;
+    return updateNode(key, occupied, lazy_eval);
+  }
+
+  template <class NODE>
+  NODE* OccupancyOcTreeBase<NODE>::updateNode(const point3d& value, bool occupied, bool lazy_eval) {
+	  //std::cout<<"in update node parent parent update"<<std::endl;
+	  OcTreeKey key;
+    if (!this->coordToKeyChecked(value, key))
       return NULL;
     return updateNode(key, occupied, lazy_eval);
   }

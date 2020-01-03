@@ -96,6 +96,14 @@ namespace octomap {
     virtual void insertPointCloud(const Pointcloud& scan, const octomap::point3d& sensor_origin,
                    double maxrange=-1., bool lazy_eval = false, bool discretize = false);
 
+
+    virtual NODE* setChild(NODE* node, NODE* new_child_node, int childIdx);
+
+    virtual NODE* search_with_pos_return_(const OcTreeKey& key, unsigned int& pos_found_at, unsigned int depth);
+  
+    virtual void expandRecursForShrinking_(NODE* node, unsigned int depth, unsigned int max_depth);
+
+
     /**
     * Integrate a 3d scan (transform scan before tree update), parallelized with OpenMP.
     * Special care is taken that each voxel

@@ -135,6 +135,11 @@ namespace octomap {
     }
   }
 
+  
+  template <typename T>
+  void OcTreeDataNode<T>::setChild(int idx, AbstractOcTreeNode* child_node){
+        children[idx] = child_node; 
+  }
 
 } // end namespace
 

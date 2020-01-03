@@ -116,6 +116,7 @@ namespace octomap {
     /// Make the templated data type available from the outside
     typedef T DataType;
 
+    void setChild(int, AbstractOcTreeNode*);
 
   protected:
     void allocChildren();

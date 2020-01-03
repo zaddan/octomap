@@ -199,6 +199,9 @@ namespace octomap {
      */
     NODE* search(const OcTreeKey& key, unsigned int depth = 0) const;
 
+
+    NODE* search_with_pos_return(const OcTreeKey& key, unsigned int& pos_found_at, unsigned int depth = 0) ; //
+
     /**
      *  Delete a node (if exists) given a 3d point. Will always
      *  delete at the lowest level unless depth !=0, and expand pruned inner nodes as needed.
@@ -496,6 +499,8 @@ namespace octomap {
     inline point3d keyToCoord(const OcTreeKey& key, unsigned depth) const{
       return point3d(float(keyToCoord(key[0], depth)), float(keyToCoord(key[1], depth)), float(keyToCoord(key[2], depth)));
     }
+
+    //void expandRecursForShrinking(NODE* node, unsigned int depth, unsigned int max_depth);
 
  protected:
     /// Constructor to enable derived classes to change tree constants.

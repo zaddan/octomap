@@ -472,6 +472,53 @@ namespace octomap {
 
 
   template <class NODE,class I>
+  NODE* OcTreeBaseImpl<NODE,I>::search_with_pos_return(const OcTreeKey& key, unsigned int& pos_found_at, unsigned int depth) {
+    assert(depth <= tree_depth);
+    if (root == NULL)
+      return NULL;
+
+    if (depth == 0)
+      depth = tree_depth;
+
+    int depth_at  = -1;
+
+    // generate appropriate key_at_depth for queried depth
+    OcTreeKey key_at_depth = key;
+    if (depth != tree_depth)
+      key_at_depth = adjustKeyAtDepth(key, depth);
+
+    NODE* curNode (root);
+
+    int diff = tree_depth - depth;
+    unsigned int pos;
+    // follow nodes down to requested level (for diff = 0 it's the last level)
+    for (int i=(tree_depth-1); i>=diff; --i) {
+       depth_at +=1;
+       pos = computeChildIdx(key_at_depth, i);
+      if (nodeChildExists(curNode, pos)) {
+        // cast needed: (nodes need to ensure it's the right pointer)
+        curNode = getNodeChild(curNode, pos);
+      } else {
+        // we expected a child but did not get it
+        // is the current node a leaf already?
+        if (!nodeHasChildren(curNode)) { // TODO similar check to nodeChildExists?
+            pos_found_at = pos;
+            return curNode;
+        } else {
+          // it is not, search failed
+            pos_found_at = -999;
+            return NULL;
+        }
+      }
+    } // end for
+    pos_found_at = pos; 
+    return curNode;
+  }
+
+
+
+
+  template <class NODE,class I>
   bool OcTreeBaseImpl<NODE,I>::deleteNode(const point3d& value, unsigned int depth) {
     OcTreeKey key;
     if (!coordToKeyChecked(value, key)){
@@ -758,6 +805,13 @@ namespace octomap {
     }
   }
 
+/*
+  template <class NODE,class I>
+  void OcTreeBaseImpl<NODE,I>::expandRecursForShrinking(NODE* node, unsigned int depth,
+                                      unsigned int max_depth) {
+       expandRecurs(node, depth, max_depth);
+  }
+*/
 
   template <class NODE,class I>
   std::ostream& OcTreeBaseImpl<NODE,I>::writeData(std::ostream &s) const{

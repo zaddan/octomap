@@ -200,7 +200,7 @@ namespace octomap {
     NODE* search(const OcTreeKey& key, unsigned int depth = 0) const;
 
 
-    NODE* search_with_pos_return(const OcTreeKey& key, unsigned int& pos_found_at, unsigned int depth = 0) ; //
+    NODE* search_with_pos_and_depth_return(const OcTreeKey& key, unsigned int& pos_found_at, int& depth_at, unsigned int depth = 0) ; //
 
     /**
      *  Delete a node (if exists) given a 3d point. Will always

@@ -99,7 +99,7 @@ namespace octomap {
 
     virtual NODE* setChild(NODE* node, NODE* new_child_node, int childIdx);
 
-    virtual NODE* search_with_pos_return_(const OcTreeKey& key, unsigned int& pos_found_at, unsigned int depth);
+    virtual NODE* search_with_pos_and_depth_return_(const OcTreeKey& key, unsigned int& pos_found_at,int& depth_at, unsigned int depth);
   
     virtual void expandRecursForShrinking_(NODE* node, unsigned int depth, unsigned int max_depth);
 

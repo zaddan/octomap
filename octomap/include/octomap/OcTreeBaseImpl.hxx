@@ -472,7 +472,7 @@ namespace octomap {
 
 
   template <class NODE,class I>
-  NODE* OcTreeBaseImpl<NODE,I>::search_with_pos_return(const OcTreeKey& key, unsigned int& pos_found_at, unsigned int depth) {
+  NODE* OcTreeBaseImpl<NODE,I>::search_with_pos_and_depth_return(const OcTreeKey& key, unsigned int& pos_found_at, int &depth_at, unsigned int depth) {
     assert(depth <= tree_depth);
     if (root == NULL)
       return NULL;
@@ -480,7 +480,7 @@ namespace octomap {
     if (depth == 0)
       depth = tree_depth;
 
-    int depth_at  = -1;
+    int depth_found_at  = -1;
 
     // generate appropriate key_at_depth for queried depth
     OcTreeKey key_at_depth = key;
@@ -493,7 +493,7 @@ namespace octomap {
     unsigned int pos;
     // follow nodes down to requested level (for diff = 0 it's the last level)
     for (int i=(tree_depth-1); i>=diff; --i) {
-       depth_at +=1;
+       depth_found_at +=1;
        pos = computeChildIdx(key_at_depth, i);
       if (nodeChildExists(curNode, pos)) {
         // cast needed: (nodes need to ensure it's the right pointer)
@@ -512,6 +512,7 @@ namespace octomap {
       }
     } // end for
     pos_found_at = pos; 
+    depth_at = depth_found_at;
     return curNode;
   }
 

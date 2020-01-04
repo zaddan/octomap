@@ -304,8 +304,8 @@ template <class NODE>
 
 
   template <class NODE>
-      NODE* OccupancyOcTreeBase<NODE>::search_with_pos_return_(const OcTreeKey& key, unsigned int& pos_found_at, unsigned int depth) {
-        this->search_with_pos_return(key, pos_found_at, depth);
+      NODE* OccupancyOcTreeBase<NODE>::search_with_pos_and_depth_return_(const OcTreeKey& key, unsigned int& pos_found_at, int& depth_at, unsigned int depth) {
+        this->search_with_pos_and_depth_return(key, pos_found_at, depth_at, depth);
   }
    
   

@@ -441,13 +441,13 @@ namespace octomap {
      * @param node OcTreeNode to write out, will recurse to all children
      * @return
      */
-    std::ostream& writeBinaryNode(std::ostream &s, const NODE* node) const;
+    std::ostream& writeBinaryNode(std::ostream &s, const NODE* node, int depth, int depth_limit) const;
 
     /**
      * Writes the data of the tree (without header) to the stream, recursively
      * calling writeBinaryNode (starting with root)
      */
-    std::ostream& writeBinaryData(std::ostream &s) const;
+    std::ostream& writeBinaryData(std::ostream &s, int depth_limit=0) const;
 
 
     /**

@@ -962,10 +962,13 @@ template <class NODE>
   }
 
   template <class NODE>
-  std::ostream& OccupancyOcTreeBase<NODE>::writeBinaryData(std::ostream &s) const{
-    OCTOMAP_DEBUG("Writing %zu nodes to output stream...", this->size());
+  std::ostream& OccupancyOcTreeBase<NODE>::writeBinaryData(std::ostream &s, int depth_limit) const{
+    if (depth_limit == 0){
+        depth_limit = this->tree_depth;
+    }
+      OCTOMAP_DEBUG("Writing %zu nodes to output stream...", this->size());
     if (this->root)
-      this->writeBinaryNode(s, this->root);
+      this->writeBinaryNode(s, this->root, 0, depth_limit);
     return s;
   }
 
@@ -1041,7 +1044,7 @@ template <class NODE>
   }
 
   template <class NODE>
-  std::ostream& OccupancyOcTreeBase<NODE>::writeBinaryNode(std::ostream &s, const NODE* node) const{
+  std::ostream& OccupancyOcTreeBase<NODE>::writeBinaryNode(std::ostream &s, const NODE* node, int depth, int depth_limit) const{
 
     assert(node);
 
@@ -1061,7 +1064,7 @@ template <class NODE>
     for (unsigned int i=0; i<4; i++) {
       if (this->nodeChildExists(node, i)) {
         const NODE* child = this->getNodeChild(node, i);
-        if      (this->nodeHasChildren(child))  { child1to4[i*2] = 1; child1to4[i*2+1] = 1; }
+        if      (this->nodeHasChildren(child) && (depth+1)<depth_limit)  { child1to4[i*2] = 1; child1to4[i*2+1] = 1; }
         else if (this->isNodeOccupied(child)) { child1to4[i*2] = 0; child1to4[i*2+1] = 1; }
         else                            { child1to4[i*2] = 1; child1to4[i*2+1] = 0; }
       }
@@ -1073,7 +1076,7 @@ template <class NODE>
     for (unsigned int i=0; i<4; i++) {
       if (this->nodeChildExists(node, i+4)) {
         const NODE* child = this->getNodeChild(node, i+4);
-        if      (this->nodeHasChildren(child))  { child5to8[i*2] = 1; child5to8[i*2+1] = 1; }
+        if      (this->nodeHasChildren(child) && (depth+1)<depth_limit)  { child5to8[i*2] = 1; child5to8[i*2+1] = 1; }
         else if (this->isNodeOccupied(child)) { child5to8[i*2] = 0; child5to8[i*2+1] = 1; }
         else                            { child5to8[i*2] = 1; child5to8[i*2+1] = 0; }
       }
@@ -1092,15 +1095,16 @@ template <class NODE>
     s.write((char*)&child5to8_char, sizeof(char));
 
     // write children's children
-    for (unsigned int i=0; i<8; i++) {
-      if (this->nodeChildExists(node, i)) {
-        const NODE* child = this->getNodeChild(node, i);
-        if (this->nodeHasChildren(child)) {
-          writeBinaryNode(s, child);
+    if (depth + 1 < depth_limit){
+        for (unsigned int i=0; i<8; i++) {
+            if (this->nodeChildExists(node, i)) {
+                const NODE* child = this->getNodeChild(node, i);
+                if (this->nodeHasChildren(child)) {
+                    writeBinaryNode(s, child, depth+1, depth_limit);
+                }
+            }
         }
-      }
     }
-
     return s;
   }
 

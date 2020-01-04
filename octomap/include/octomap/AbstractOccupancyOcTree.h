@@ -89,7 +89,7 @@ namespace octomap {
     bool writeBinaryConst(std::ostream &s) const;
 
     /// Writes the actual data, implemented in OccupancyOcTreeBase::writeBinaryData()
-    virtual std::ostream& writeBinaryData(std::ostream &s) const = 0;
+    virtual std::ostream& writeBinaryData(std::ostream &s, int depth_limit_0=0) const = 0;
     
     /**
      * Reads an OcTree from an input stream.

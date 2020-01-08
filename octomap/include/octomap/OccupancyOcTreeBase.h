@@ -309,6 +309,9 @@ namespace octomap {
      */
     virtual bool castRay(const point3d& origin, const point3d& direction, point3d& end,
                  bool ignoreUnknownCells=false, double maxRange=-1.0) const;
+    virtual bool castRayAndCollectVolumeTraveresed(const point3d& origin, const point3d& direction, point3d& end,
+                 bool ignoreUnknownCells=false, double maxRange=-1.0, double &volume_traversed_in_unit_cube=0) const;
+
 
     /**
      * Retrieves the entry point of a ray into a voxel. This is the closest intersection point of the ray
@@ -441,13 +444,14 @@ namespace octomap {
      * @param node OcTreeNode to write out, will recurse to all children
      * @return
      */
-    std::ostream& writeBinaryNode(std::ostream &s, const NODE* node, int depth, int depth_limit) const;
+    std::ostream& writeBinaryNode(std::ostream &s, const NODE* node, int depth, int depth_limit, double &volume_communicated_in_unit_cubes) const;
 
     /**
      * Writes the data of the tree (without header) to the stream, recursively
      * calling writeBinaryNode (starting with root)
      */
-    std::ostream& writeBinaryData(std::ostream &s, int depth_limit=0) const;
+    std::ostream& writeBinaryData(std::ostream &s, int depth_limit, double &volume_communicated_in_unit_cubes) const;
+    std::ostream& writeBinaryData(std::ostream &s) const;
 
 
     /**

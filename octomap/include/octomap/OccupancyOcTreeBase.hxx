@@ -654,6 +654,135 @@ template <class NODE>
     return true;
   }
 
+template <class NODE>
+  bool OccupancyOcTreeBase<NODE>::castRayAndCollectVolumeTraveresed(const point3d& origin, const point3d& directionP, point3d& end,
+                                          bool ignoreUnknown, double maxRange, double &volume_traversed_in_unit_cube) const {
+
+    /// ----------  see OcTreeBase::computeRayKeys  -----------
+
+    // Initialization phase -------------------------------------------------------
+    OcTreeKey current_key;
+    if ( !OcTreeBaseImpl<NODE,AbstractOccupancyOcTree>::coordToKeyChecked(origin, current_key) ) {
+      OCTOMAP_WARNING_STR("Coordinates out of bounds during ray casting");
+      return false;
+    }
+
+    NODE* startingNode = this->search(current_key);
+    if (startingNode){
+       volume_traversed_in_unit_cube += 1;//pow(this->resolution,3);
+       if (this->isNodeOccupied(startingNode)){
+          // Occupied node found at origin
+        // (need to convert from key, since origin does not need to be a voxel center)
+        end = this->keyToCoord(current_key);
+        return true;
+      }
+    } else if(!ignoreUnknown){
+      volume_traversed_in_unit_cube += 1;//pow(this->resolution,3);
+      end = this->keyToCoord(current_key);
+      return false;
+    }
+
+    point3d direction = directionP.normalized();
+    bool max_range_set = (maxRange > 0.0);
+
+    int step[3];
+    double tMax[3];
+    double tDelta[3];
+
+    for(unsigned int i=0; i < 3; ++i) {
+      // compute step direction
+      if (direction(i) > 0.0) step[i] =  1;
+      else if (direction(i) < 0.0)   step[i] = -1;
+      else step[i] = 0;
+
+      // compute tMax, tDelta
+      if (step[i] != 0) {
+        // corner point of voxel (in direction of ray)
+        double voxelBorder = this->keyToCoord(current_key[i]);
+        voxelBorder += double(step[i] * this->resolution * 0.5);
+
+        tMax[i] = ( voxelBorder - origin(i) ) / direction(i);
+        tDelta[i] = this->resolution / fabs( direction(i) );
+      }
+      else {
+        tMax[i] =  std::numeric_limits<double>::max();
+        tDelta[i] = std::numeric_limits<double>::max();
+      }
+    }
+
+    if (step[0] == 0 && step[1] == 0 && step[2] == 0){
+    	OCTOMAP_ERROR("Raycasting in direction (0,0,0) is not possible!");
+    	return false;
+    }
+
+    // for speedup:
+    double maxrange_sq = maxRange *maxRange;
+
+    // Incremental phase  ---------------------------------------------------------
+
+    bool done = false;
+
+    while (!done) {
+      unsigned int dim;
+
+      // find minimum tMax:
+      if (tMax[0] < tMax[1]){
+        if (tMax[0] < tMax[2]) dim = 0;
+        else                   dim = 2;
+      }
+      else {
+        if (tMax[1] < tMax[2]) dim = 1;
+        else                   dim = 2;
+      }
+
+      // check for overflow:
+      if ((step[dim] < 0 && current_key[dim] == 0)
+    		  || (step[dim] > 0 && current_key[dim] == 2* this->tree_max_val-1))
+      {
+        OCTOMAP_WARNING("Coordinate hit bounds in dim %d, aborting raycast\n", dim);
+        // return border point nevertheless:
+        end = this->keyToCoord(current_key);
+        return false;
+      }
+
+      // advance in direction "dim"
+      current_key[dim] += step[dim];
+      tMax[dim] += tDelta[dim];
+
+
+      // generate world coords from key
+      end = this->keyToCoord(current_key);
+
+      // check for maxrange:
+      if (max_range_set){
+        double dist_from_origin_sq(0.0);
+        for (unsigned int j = 0; j < 3; j++) {
+          dist_from_origin_sq += ((end(j) - origin(j)) * (end(j) - origin(j)));
+        }
+        if (dist_from_origin_sq > maxrange_sq)
+          return false;
+
+      }
+
+      NODE* currentNode = this->search(current_key);
+      if (currentNode){
+        volume_traversed_in_unit_cube += 1;//pow(this->resolution,3);
+        if (this->isNodeOccupied(currentNode)) {
+            done = true;
+          break;
+        }
+        // otherwise: node is free and valid, raycasting continues
+      } else if (!ignoreUnknown){ // no node found, this usually means we are in "unknown" areas
+        return false;
+      }
+    } // end while
+
+    return true;
+  }
+
+
+
+
   template <class NODE>
   bool OccupancyOcTreeBase<NODE>::castRay(const point3d& origin, const point3d& directionP, point3d& end,
                                           bool ignoreUnknown, double maxRange) const {
@@ -962,13 +1091,21 @@ template <class NODE>
   }
 
   template <class NODE>
-  std::ostream& OccupancyOcTreeBase<NODE>::writeBinaryData(std::ostream &s, int depth_limit) const{
+  std::ostream& OccupancyOcTreeBase<NODE>::writeBinaryData(std::ostream &s) const{
+       int depth_limit = 0;
+       double volume_communicated_in_unit_cubes = 0;
+    return writeBinaryData(s, depth_limit, volume_communicated_in_unit_cubes);
+  }
+
+  
+  template <class NODE>
+  std::ostream& OccupancyOcTreeBase<NODE>::writeBinaryData(std::ostream &s, int depth_limit, double &volume_communicated_in_unit_cubes) const{
     if (depth_limit == 0){
         depth_limit = this->tree_depth;
     }
       OCTOMAP_DEBUG("Writing %zu nodes to output stream...", this->size());
     if (this->root)
-      this->writeBinaryNode(s, this->root, 0, depth_limit);
+      this->writeBinaryNode(s, this->root, 0, depth_limit, volume_communicated_in_unit_cubes);
     return s;
   }
 
@@ -1044,7 +1181,7 @@ template <class NODE>
   }
 
   template <class NODE>
-  std::ostream& OccupancyOcTreeBase<NODE>::writeBinaryNode(std::ostream &s, const NODE* node, int depth, int depth_limit) const{
+  std::ostream& OccupancyOcTreeBase<NODE>::writeBinaryNode(std::ostream &s, const NODE* node, int depth, int depth_limit, double &volume_communicated_in_unit_cubes) const{
 
     assert(node);
 
@@ -1100,10 +1237,13 @@ template <class NODE>
             if (this->nodeChildExists(node, i)) {
                 const NODE* child = this->getNodeChild(node, i);
                 if (this->nodeHasChildren(child)) {
-                    writeBinaryNode(s, child, depth+1, depth_limit);
+                    writeBinaryNode(s, child, depth+1, depth_limit, volume_communicated_in_unit_cubes);
                 }
             }
         }
+    }else{
+        int coeff =  2 << (this->tree_depth - depth_limit);
+        volume_communicated_in_unit_cubes += coeff;
     }
     return s;
   }

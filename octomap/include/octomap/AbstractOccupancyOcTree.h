@@ -71,6 +71,7 @@ namespace octomap {
      */
     bool writeBinary(std::ostream &s);
 
+
     /**
      * Writes OcTree to a binary file using writeBinaryConst().
      * The OcTree is not changed, in particular not pruned first.
@@ -89,8 +90,10 @@ namespace octomap {
     bool writeBinaryConst(std::ostream &s) const;
 
     /// Writes the actual data, implemented in OccupancyOcTreeBase::writeBinaryData()
-    virtual std::ostream& writeBinaryData(std::ostream &s, int depth_limit_0=0) const = 0;
+    virtual std::ostream& writeBinaryData(std::ostream &s) const = 0;
+    virtual std::ostream& writeBinaryData(std::ostream &s, int depth_limit_0, double &volume_communicated_in_unit_cube) const = 0;
     
+
     /**
      * Reads an OcTree from an input stream.
      * Existing nodes of the tree are deleted before the tree is read.

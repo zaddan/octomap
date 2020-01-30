@@ -662,6 +662,8 @@ template <class NODE>
 
     // Initialization phase -------------------------------------------------------
     OcTreeKey current_key;
+    
+    volume_traversed_in_unit_cube += 1;//pow(this->resolution,3);
     if ( !OcTreeBaseImpl<NODE,AbstractOccupancyOcTree>::coordToKeyChecked(origin, current_key) ) {
       OCTOMAP_WARNING_STR("Coordinates out of bounds during ray casting");
       return false;
@@ -669,7 +671,6 @@ template <class NODE>
 
     NODE* startingNode = this->search(current_key);
     if (startingNode){
-       volume_traversed_in_unit_cube += 1;//pow(this->resolution,3);
        if (this->isNodeOccupied(startingNode)){
           // Occupied node found at origin
         // (need to convert from key, since origin does not need to be a voxel center)
@@ -677,7 +678,6 @@ template <class NODE>
         return true;
       }
     } else if(!ignoreUnknown){
-      volume_traversed_in_unit_cube += 1;//pow(this->resolution,3);
       end = this->keyToCoord(current_key);
       return false;
     }
@@ -722,7 +722,9 @@ template <class NODE>
 
     bool done = false;
 
+    volume_traversed_in_unit_cube -= 1; //to avoid double counting
     while (!done) {
+      volume_traversed_in_unit_cube += 1;//pow(this->resolution,3);
       unsigned int dim;
 
       // find minimum tMax:
@@ -766,14 +768,13 @@ template <class NODE>
 
       NODE* currentNode = this->search(current_key);
       if (currentNode){
-        volume_traversed_in_unit_cube += 1;//pow(this->resolution,3);
         if (this->isNodeOccupied(currentNode)) {
             done = true;
           break;
         }
         // otherwise: node is free and valid, raycasting continues
       } else if (!ignoreUnknown){ // no node found, this usually means we are in "unknown" areas
-        return false;
+          return false;
       }
     } // end while
 

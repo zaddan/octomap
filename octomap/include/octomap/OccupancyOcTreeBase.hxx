@@ -414,7 +414,8 @@ template <class NODE>
         // note: combining both did not lead to a speedup!
         if (this->pruneNode(node)){
           // return pointer to current parent (pruned), the just updated node no longer exists
-           node->setVolumeInUnitCube(1<< (this->tree_depth - depth));
+            float cube_side_length = 1<< (this->tree_depth - depth);
+            node->setVolumeInUnitCube(cube_side_length*cube_side_length*cube_side_length);
            retval = node;
         } else{
           node->updateOccupancyChildren();

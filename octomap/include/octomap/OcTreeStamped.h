@@ -69,6 +69,11 @@ namespace octomap {
       updateTimestamp();
     }
 
+    inline void updateVolumeInUnitCube() {
+      this->setVolumeInUnitCube(this->getSumChildrenVolume());  // conservative
+    }
+
+
   protected:
     unsigned int timestamp;
   };

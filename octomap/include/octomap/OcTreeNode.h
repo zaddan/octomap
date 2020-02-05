@@ -66,8 +66,10 @@ namespace octomap {
 
     /// \return log odds representation of occupancy probability of node
     inline float getLogOdds() const{ return value; }
+    inline float getVolumeInUnitCube() const{ return volume_in_unit_cube; }
     /// sets log odds occupancy of node
     inline void setLogOdds(float l) { value = l; }
+    inline void setVolumeInUnitCube(float volume_in_unit_cube_) { volume_in_unit_cube = volume_in_unit_cube_; }
 
     /**
      * @return mean of all children's occupancy probabilities, in log odds
@@ -78,15 +80,22 @@ namespace octomap {
      * @return maximum of children's occupancy probabilities, in log odds
      */
     float getMaxChildLogOdds() const;
+    float getSumChildrenVolume() const;
+
 
     /// update this node's occupancy according to its children's maximum occupancy
     inline void updateOccupancyChildren() {
       this->setLogOdds(this->getMaxChildLogOdds());  // conservative
     }
 
+    /// update volume of the node by adding all the children
+    inline void updateVolumeInUnitCube() {
+      this->setVolumeInUnitCube(this->getSumChildrenVolume());  // conservative
+    }
+
     /// adds p to the node's logOdds value (with no boundary / threshold checking!)
     void addValue(const float& p);
-    
+
 
   protected:
     // "value" stores log odds occupancy probability

@@ -73,6 +73,21 @@ namespace octomap {
     return log(mean/(1-mean));
   }
 
+  float OcTreeNode::getSumChildrenVolume() const{
+    float sum_volume = 0;
+    if (children !=NULL){
+      for (unsigned int i=0; i<8; i++) {
+        if (children[i] != NULL) {
+          sum_volume += static_cast<OcTreeNode*>(children[i])->getVolumeInUnitCube(); // TODO check if works generally
+        }
+      }
+    }
+    return sum_volume;
+  }
+
+
+  
+  
   float OcTreeNode::getMaxChildLogOdds() const{
     float max = -std::numeric_limits<float>::max();
     

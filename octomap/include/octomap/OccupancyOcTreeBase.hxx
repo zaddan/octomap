@@ -414,9 +414,11 @@ template <class NODE>
         // note: combining both did not lead to a speedup!
         if (this->pruneNode(node)){
           // return pointer to current parent (pruned), the just updated node no longer exists
-          retval = node;
+           node->setVolumeInUnitCube(1<< (this->tree_depth - depth));
+           retval = node;
         } else{
           node->updateOccupancyChildren();
+          node->updateVolumeInUnitCube(); 
         }
 
         return retval;
@@ -441,6 +443,7 @@ template <class NODE>
       } else {
         updateNodeLogOdds(node, log_odds_update);
       }
+      node->setVolumeInUnitCube(1); 
       return node;
     }
   }
@@ -1240,10 +1243,13 @@ template <class NODE>
                 if (this->nodeHasChildren(child)) {
                     writeBinaryNode(s, child, depth+1, depth_limit, volume_communicated_in_unit_cubes);
                 }
+            }else{
+                int coeff =  2 << (this->tree_depth - depth);
+                volume_communicated_in_unit_cubes += coeff;
             }
         }
     }else{
-        int coeff =  2 << (this->tree_depth - depth_limit);
+        int coeff =  2 << (this->tree_depth - depth);
         volume_communicated_in_unit_cubes += coeff;
     }
     return s;

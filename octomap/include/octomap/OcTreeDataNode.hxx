@@ -42,7 +42,7 @@ namespace octomap {
 
   template <typename T>
   OcTreeDataNode<T>::OcTreeDataNode(T initVal)
-   : children(NULL), value(initVal)
+   : children(NULL), value(initVal), volume_in_unit_cube(0)
   {
 
   }
@@ -138,7 +138,7 @@ namespace octomap {
   
   template <typename T>
   void OcTreeDataNode<T>::setChild(int idx, AbstractOcTreeNode* child_node){
-        children[idx] = child_node; 
+      children[idx] = child_node; 
   }
 
 } // end namespace

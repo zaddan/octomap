@@ -68,7 +68,6 @@ namespace octomap {
 
     OcTreeDataNode();
     OcTreeDataNode(T initVal);
-    
     /// Copy constructor, performs a recursive deep-copy of all children 
     /// including node data in "value"
     OcTreeDataNode(const OcTreeDataNode& rhs);
@@ -117,6 +116,7 @@ namespace octomap {
     typedef T DataType;
 
     void setChild(int, AbstractOcTreeNode*);
+    void setChild(float);
 
   protected:
     void allocChildren();
@@ -127,6 +127,7 @@ namespace octomap {
     AbstractOcTreeNode** children;
     /// stored data (payload)
     T value;
+    float volume_in_unit_cube;
 
   };
 

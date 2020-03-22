@@ -294,7 +294,7 @@ namespace octomap {
     * @return Success of operation. Returning false usually means that one of the coordinates is out of the OcTree's range
     */
     bool computeRayKeys(const point3d& origin, const point3d& end, KeyRay& ray) const;
-
+    bool computeRayKeys(const point3d& origin, const point3d& end, KeyRay& ray, int resolution_scale, int depth_to_look_at) const;
 
    /**
     * Traces a ray from origin to end (excluding), returning the

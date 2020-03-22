@@ -660,10 +660,12 @@ template <class NODE>
 
 template <class NODE>
   bool OccupancyOcTreeBase<NODE>::castRayAndCollectVolumeTraveresed(const point3d& origin, const point3d& directionP, point3d& end,
-                                          bool ignoreUnknown, double maxRange, double &volume_traversed_in_unit_cube) const {
+                                          bool ignoreUnknown, double maxRange, double &volume_traversed_in_unit_cube, int resolution_scale, int depth_to_look_at) const {
 
     /// ----------  see OcTreeBase::computeRayKeys  -----------
-
+    //double old_res = this->resolution;
+    //this->resolution = (this->resolution)<<4;
+    double resolution = this->resolution*resolution_scale;
     // Initialization phase -------------------------------------------------------
     OcTreeKey current_key;
     
@@ -673,6 +675,7 @@ template <class NODE>
       return false;
     }
 
+    current_key = this->adjustKeyAtDepth(current_key, depth_to_look_at);
     NODE* startingNode = this->search(current_key);
     if (startingNode){
        if (this->isNodeOccupied(startingNode)){
@@ -703,10 +706,11 @@ template <class NODE>
       if (step[i] != 0) {
         // corner point of voxel (in direction of ray)
         double voxelBorder = this->keyToCoord(current_key[i]);
-        voxelBorder += double(step[i] * this->resolution * 0.5);
+        voxelBorder += double(step[i] * resolution * 0.5);
 
         tMax[i] = ( voxelBorder - origin(i) ) / direction(i);
-        tDelta[i] = this->resolution / fabs( direction(i) );
+        //tDelta[i] = this->resolution / fabs( direction(i) );
+        tDelta[i] = resolution/ fabs(direction(i));
       }
       else {
         tMax[i] =  std::numeric_limits<double>::max();
@@ -752,11 +756,20 @@ template <class NODE>
       }
 
       // advance in direction "dim"
-      current_key[dim] += step[dim];
+      //auto cur_coord_before = this->keyToCoord(current_key);
+      //OcTreeKey current_key_at_depth;
+      //current_key_at_depth [0]= current_key[0];
+      //current_key_at_depth [1]= current_key[1];
+      //current_key_at_depth [2]= current_key[2];
+      current_key[dim] += resolution_scale*step[dim];
+      //current_key_at_depth[dim] += 2*step[dim];
+      
       tMax[dim] += tDelta[dim];
-
+      //auto cur_coord = this->keyToCoord(current_key);
+      //auto cur_coord_at_depth = this->keyToCoord(current_key_at_depth);
 
       // generate world coords from key
+      current_key = this->adjustKeyAtDepth(current_key, depth_to_look_at);
       end = this->keyToCoord(current_key);
 
       // check for maxrange:

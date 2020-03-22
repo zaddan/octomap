@@ -310,7 +310,7 @@ namespace octomap {
     virtual bool castRay(const point3d& origin, const point3d& direction, point3d& end,
                  bool ignoreUnknownCells=false, double maxRange=-1.0) const;
     virtual bool castRayAndCollectVolumeTraveresed(const point3d& origin, const point3d& direction, point3d& end,
-                 bool ignoreUnknownCells=false, double maxRange=-1.0, double &volume_traversed_in_unit_cube=0) const;
+                 bool ignoreUnknownCells=false, double maxRange=-1.0, double &volume_traversed_in_unit_cube=0, int scale = 1, int depth_to_look_at = 16) const;
 
 
     /**

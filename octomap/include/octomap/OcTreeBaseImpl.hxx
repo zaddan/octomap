@@ -608,9 +608,11 @@ namespace octomap {
     }
 
 
+
     //key_origin= this->adjustKeyAtDepth(key_origin, depth_to_look_at);
     //key_end= this->adjustKeyAtDepth(key_end, depth_to_look_at);
-    
+    point3d cur_point = origin;    
+    point3d moved_point = origin;    
     if (key_origin == key_end)
       return true; // same tree cell, we're done.
 
@@ -626,7 +628,8 @@ namespace octomap {
     int    step[3];
     double tMax[3];
     double tDelta[3];
-
+    double left[3];
+    double step_size_[3];
     OcTreeKey current_key = key_origin;
 
     for(unsigned int i=0; i < 3; ++i) {
@@ -638,23 +641,26 @@ namespace octomap {
       // compute tMax, tDelta
       if (step[i] != 0) {
         // corner point of voxel (in direction of ray)
-        double voxelBorder = this->keyToCoord(current_key[i]);
+       //current_key = this->adjustKeyAtDepth(current_key, depth_to_look_at);
+       double voxelBorder = this->keyToCoord(current_key[i]);
         voxelBorder += (float) (step[i] * resolution * 0.5);
 
         tMax[i] = ( voxelBorder - origin(i) ) / direction(i);
         tDelta[i] = resolution / fabs( direction(i) );
+        left[i] = fabs( voxelBorder - origin(i) );
       }
       else {
         tMax[i] =  std::numeric_limits<double>::max( );
         tDelta[i] = std::numeric_limits<double>::max( );
+        left[i] = std::numeric_limits<double>::max( );
       }
+    
     }
 
     // Incremental phase  ---------------------------------------------------------
 
     bool done = false;
     while (!done) {
-
       unsigned int dim;
 
       // find minimum tMax:
@@ -666,9 +672,45 @@ namespace octomap {
         if (tMax[1] < tMax[2]) dim = 1;
         else                   dim = 2;
       }
+    
+     /*
+      // sanityf check 
+      double sc[3];
+       for (int i =0; i<3; i++){
+        sc[i] = left[i] - direction(i);
+       }
+    int sc_dim = 0;
+    if (sc[0] <= sc[1] && sc[0] <= sc[2]) {
+        sc_dim = 0;
+    }else if (sc[1] <= sc[0] && sc[1] <= sc[2]) {
+        sc_dim = 1;
+    }else{
+        sc_dim = 2;
+    }
 
+    if (sc_dim != dim){
+        std::cout<<"Waht"<<dim<<std::endl; 
+    }
+    */
       // advance in direction "dim"
-      current_key[dim] += resolution_scale*step[dim];
+      for (int i = 0; i< 3; i++){
+        step_size_[i] = (left[dim]*fabs(direction(i)/direction(dim)))*resolution;
+      }
+      for (int i = 0; i<3; i++){
+          //cur_point(i) += moved_point(i) + step_size_[i]*step[i];
+          cur_point(i) += step_size_[i]*step[i];
+      }
+      
+      for (int i = 0; i< 3; i++){
+        left[i] -= (step_size_[i]/resolution);
+      }     
+
+      //moved_point(dim)  = cur_point(dim);
+      left[dim] = 1;
+      //std::cout<<"here is the dim"<<dim<<std::endl; 
+      current_key = coordToKey(cur_point);
+      //current_key[dim] += resolution_scale*step[dim];
+      
       tMax[dim] += tDelta[dim];
       //current_key = this->adjustKeyAtDepth(current_key, depth_to_look_at);
 
@@ -699,7 +741,7 @@ namespace octomap {
       assert ( ray.size() < ray.sizeMax() - 1);
 
     } // end while
-
+    //std::cout<<"done"<<std::endl;
     return true;
   }
   

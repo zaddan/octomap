@@ -612,7 +612,7 @@ namespace octomap {
     //key_origin= this->adjustKeyAtDepth(key_origin, depth_to_look_at);
     //key_end= this->adjustKeyAtDepth(key_end, depth_to_look_at);
     point3d cur_point = origin;    
-    point3d moved_point = origin;    
+    //point3d moved_point = origin;    
     if (key_origin == key_end)
       return true; // same tree cell, we're done.
 
@@ -632,6 +632,14 @@ namespace octomap {
     double step_size_[3];
     OcTreeKey current_key = key_origin;
 
+    auto current_key_temp = this->adjustKeyAtDepth(current_key, depth_to_look_at);
+    //auto current_key_temp_2 = this->adjustKeyAtDepth(current_key, depth_to_look_at - 1);
+    //auto current_key_temp_3 = this->adjustKeyAtDepth(current_key, depth_to_look_at - 2);
+    //auto voxel_center_coord_original = this->keyToCoord(this->coordToKey(origin));
+    //auto voxel_center_diff_res_coord = this->keyToCoord(this->coordToKey(origin, depth_to_look_at -1), depth_to_look_at -1);
+    //auto voxel_center_diff_res_coord_2 = this->keyToCoord(this->coordToKey(origin, depth_to_look_at-2), depth_to_look_at - 2);
+    //auto voxel_center_diff_res_coord_3 = this->keyToCoord(this->coordToKey(origin, depth_to_look_at-3), depth_to_look_at - 3);
+
     for(unsigned int i=0; i < 3; ++i) {
       // compute step direction
       if (direction(i) > 0.0) step[i] =  1;
@@ -641,13 +649,12 @@ namespace octomap {
       // compute tMax, tDelta
       if (step[i] != 0) {
         // corner point of voxel (in direction of ray)
-       //current_key = this->adjustKeyAtDepth(current_key, depth_to_look_at);
-       double voxelBorder = this->keyToCoord(current_key[i]);
+        double voxelBorder = this->keyToCoord(current_key_temp[i], depth_to_look_at);
         voxelBorder += (float) (step[i] * resolution * 0.5);
 
         tMax[i] = ( voxelBorder - origin(i) ) / direction(i);
         tDelta[i] = resolution / fabs( direction(i) );
-        left[i] = fabs( voxelBorder - origin(i) );
+        left[i] = fabs( voxelBorder - origin(i) )/resolution;
       }
       else {
         tMax[i] =  std::numeric_limits<double>::max( );
@@ -822,6 +829,7 @@ namespace octomap {
       // advance in direction "dim"
       current_key[dim] += step[dim];
       tMax[dim] += tDelta[dim];
+
 
       assert (current_key[dim] < 2*this->tree_max_val);
 

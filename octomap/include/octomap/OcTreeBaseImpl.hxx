@@ -494,7 +494,8 @@ namespace octomap {
     // follow nodes down to requested level (for diff = 0 it's the last level)
     for (int i=(tree_depth-1); i>=diff; --i) {
        depth_found_at +=1;
-      unsigned int pos = computeChildIdx(key_at_depth, i);
+       depth_at = depth_found_at;
+       unsigned int pos = computeChildIdx(key_at_depth, i);
       pos_found_at = pos; 
       if (nodeChildExists(curNode, pos)) {
         // cast needed: (nodes need to ensure it's the right pointer)
@@ -514,7 +515,7 @@ namespace octomap {
         }
       }
     } // end for
-    depth_at = depth_found_at;
+    //depth_at = depth_found_at;
     return curNode;
   }
 

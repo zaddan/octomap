@@ -668,24 +668,25 @@ template <class NODE>
     double resolution = this->resolution*resolution_scale;
     // Initialization phase -------------------------------------------------------
     OcTreeKey current_key;
-    
+    point3d cur_point = origin;    
     volume_traversed_in_unit_cube += 1;//pow(this->resolution,3);
     if ( !OcTreeBaseImpl<NODE,AbstractOccupancyOcTree>::coordToKeyChecked(origin, current_key) ) {
       OCTOMAP_WARNING_STR("Coordinates out of bounds during ray casting");
       return false;
     }
 
-    current_key = this->adjustKeyAtDepth(current_key, depth_to_look_at);
-    NODE* startingNode = this->search(current_key);
+   auto current_key_temp = this->adjustKeyAtDepth(current_key, depth_to_look_at);
+   // current_key = this->adjustKeyAtDepth(current_key, depth_to_look_at);
+    NODE* startingNode = this->search(current_key, depth_to_look_at);
     if (startingNode){
        if (this->isNodeOccupied(startingNode)){
           // Occupied node found at origin
         // (need to convert from key, since origin does not need to be a voxel center)
-        end = this->keyToCoord(current_key);
+        end = this->keyToCoord(current_key, depth_to_look_at);
         return true;
       }
     } else if(!ignoreUnknown){
-      end = this->keyToCoord(current_key);
+      end = this->keyToCoord(current_key, depth_to_look_at);
       return false;
     }
 
@@ -695,6 +696,8 @@ template <class NODE>
     int step[3];
     double tMax[3];
     double tDelta[3];
+    double left[3];
+    double step_size_[3];
 
     for(unsigned int i=0; i < 3; ++i) {
       // compute step direction
@@ -705,16 +708,18 @@ template <class NODE>
       // compute tMax, tDelta
       if (step[i] != 0) {
         // corner point of voxel (in direction of ray)
-        double voxelBorder = this->keyToCoord(current_key[i]);
+        double voxelBorder = this->keyToCoord(current_key_temp[i], depth_to_look_at);
         voxelBorder += double(step[i] * resolution * 0.5);
 
         tMax[i] = ( voxelBorder - origin(i) ) / direction(i);
         //tDelta[i] = this->resolution / fabs( direction(i) );
         tDelta[i] = resolution/ fabs(direction(i));
+        left[i] = fabs( voxelBorder - origin(i) )/resolution;
       }
       else {
         tMax[i] =  std::numeric_limits<double>::max();
         tDelta[i] = std::numeric_limits<double>::max();
+        left[i] = std::numeric_limits<double>::max( );
       }
     }
 
@@ -745,13 +750,28 @@ template <class NODE>
         else                   dim = 2;
       }
 
+      for (int i = 0; i< 3; i++){
+        step_size_[i] = (left[dim]*fabs(direction(i)/direction(dim)))*resolution;
+      }
+      for (int i = 0; i<3; i++){
+          //cur_point(i) += moved_point(i) + step_size_[i]*step[i];
+          cur_point(i) += step_size_[i]*step[i];
+      }
+      
+      for (int i = 0; i< 3; i++){
+        left[i] -= (step_size_[i]/resolution);
+      }     
+      left[dim] = 1;
+      current_key = this->coordToKey(cur_point);
+
+
       // check for overflow:
       if ((step[dim] < 0 && current_key[dim] == 0)
     		  || (step[dim] > 0 && current_key[dim] == 2* this->tree_max_val-1))
       {
         OCTOMAP_WARNING("Coordinate hit bounds in dim %d, aborting raycast\n", dim);
         // return border point nevertheless:
-        end = this->keyToCoord(current_key);
+        end = this->keyToCoord(current_key, depth_to_look_at);
         return false;
       }
 
@@ -761,7 +781,7 @@ template <class NODE>
       //current_key_at_depth [0]= current_key[0];
       //current_key_at_depth [1]= current_key[1];
       //current_key_at_depth [2]= current_key[2];
-      current_key[dim] += resolution_scale*step[dim];
+      //current_key[dim] += resolution_scale*step[dim];
       //current_key_at_depth[dim] += 2*step[dim];
       
       tMax[dim] += tDelta[dim];
@@ -769,7 +789,7 @@ template <class NODE>
       //auto cur_coord_at_depth = this->keyToCoord(current_key_at_depth);
 
       // generate world coords from key
-      current_key = this->adjustKeyAtDepth(current_key, depth_to_look_at);
+      //current_key = this->adjustKeyAtDepth(current_key, depth_to_look_at);
       end = this->keyToCoord(current_key);
 
       // check for maxrange:
@@ -783,7 +803,7 @@ template <class NODE>
 
       }
 
-      NODE* currentNode = this->search(current_key);
+      NODE* currentNode = this->search(current_key, depth_to_look_at);
       if (currentNode){
         if (this->isNodeOccupied(currentNode)) {
             done = true;

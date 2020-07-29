@@ -618,7 +618,8 @@ namespace octomap {
       return true; // same tree cell, we're done.
 
 
-    ray.addKey(key_origin);
+    //ray.addKey(key_origin);
+    ray.addKey(this->adjustKeyAtDepth(key_origin, depth_to_look_at));
 
     // Initialization phase -------------------------------------------------------
 
@@ -742,7 +743,8 @@ namespace octomap {
         }
 
         else {  // continue to add freespace cells
-          ray.addKey(current_key);
+          //ray.addKey(current_key);
+          ray.addKey(this->adjustKeyAtDepth(current_key, depth_to_look_at));
         }
       }
 

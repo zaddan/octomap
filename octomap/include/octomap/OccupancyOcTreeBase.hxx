@@ -690,6 +690,11 @@ template <class NODE>
       return false;
     }
 
+     if (this->coordToKey(origin, depth_to_look_at) == this->coordToKey(origin+directionP, depth_to_look_at)){ // if origin and end false in the same voxel, no collision
+         return false;
+     }
+
+
     point3d direction = directionP.normalized();
     bool max_range_set = (maxRange > 0.0);
 
@@ -1240,8 +1245,16 @@ template <class NODE>
       if (this->nodeChildExists(node, i)) {
         const NODE* child = this->getNodeChild(node, i);
         if      (this->nodeHasChildren(child) && (depth+1)<depth_limit)  { child1to4[i*2] = 1; child1to4[i*2+1] = 1; }
-        else if (this->isNodeOccupied(child)) { child1to4[i*2] = 0; child1to4[i*2+1] = 1; }
-        else                            { child1to4[i*2] = 1; child1to4[i*2+1] = 0; }
+        else if (this->isNodeOccupied(child)) {
+        	child1to4[i*2] = 0; child1to4[i*2+1] = 1;
+                double coeff =  pow(8, (this->tree_depth - depth) - 1); //here
+                volume_communicated_in_unit_cubes += coeff;
+        }
+        else   {
+        	child1to4[i*2] = 1; child1to4[i*2+1] = 0;
+            double coeff =  pow(8, (this->tree_depth - depth) - 1); //here
+            volume_communicated_in_unit_cubes += coeff;
+        }
       }
       else {
         child1to4[i*2] = 0; child1to4[i*2+1] = 0;
@@ -1251,9 +1264,18 @@ template <class NODE>
     for (unsigned int i=0; i<4; i++) {
       if (this->nodeChildExists(node, i+4)) {
         const NODE* child = this->getNodeChild(node, i+4);
-        if      (this->nodeHasChildren(child) && (depth+1)<depth_limit)  { child5to8[i*2] = 1; child5to8[i*2+1] = 1; }
-        else if (this->isNodeOccupied(child)) { child5to8[i*2] = 0; child5to8[i*2+1] = 1; }
-        else                            { child5to8[i*2] = 1; child5to8[i*2+1] = 0; }
+        if      (this->nodeHasChildren(child) && (depth+1)<depth_limit)  {
+        	child5to8[i*2] = 1; child5to8[i*2+1] = 1; }
+        else if (this->isNodeOccupied(child)) {
+        	child5to8[i*2] = 0; child5to8[i*2+1] = 1;
+        	double coeff =  pow(8, (this->tree_depth - depth) - 1); //here
+        	volume_communicated_in_unit_cubes += coeff;
+        }
+        else       {
+        	child5to8[i*2] = 1; child5to8[i*2+1] = 0;
+         	double coeff =  pow(8, (this->tree_depth - depth) - 1); //here
+        	volume_communicated_in_unit_cubes += coeff;
+        }
       }
       else {
         child5to8[i*2] = 0; child5to8[i*2+1] = 0;
@@ -1278,13 +1300,14 @@ template <class NODE>
                     writeBinaryNode(s, child, depth+1, depth_limit, volume_communicated_in_unit_cubes);
                 }
             }else{
-                int coeff =  2 << (this->tree_depth - depth);
-                volume_communicated_in_unit_cubes += coeff;
+                //double coeff =  pow(8, (this->tree_depth - depth)); //here
+                //volume_communicated_in_unit_cubes += coeff;
             }
         }
     }else{
-        int coeff =  2 << (this->tree_depth - depth);
-        volume_communicated_in_unit_cubes += coeff;
+    ;
+    	//      double coeff =  pow(8, (this->tree_depth - depth)); //here
+             //   volume_communicated_in_unit_cubes += coeff;
     }
     return s;
   }
